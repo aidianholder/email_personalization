@@ -1,0 +1,9 @@
+.venv/
+.env
+__pycache__/
+*.pyc
+.DS_Store
+*.sqlite3
+# collectstatic output; regenerate with `manage.py collectstatic`
+static/
+.idea/

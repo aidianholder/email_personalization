@@ -1,0 +1,7 @@
+psycopg[binary]>=3.2
+pgvector>=0.3
+openai>=1.40
+python-dotenv>=1.0
+numpy>=1.26
+scikit-learn>=1.4
+Django>=5.0

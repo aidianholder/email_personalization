@@ -6,4 +6,5 @@ __pycache__/
 *.sqlite3
 # collectstatic output; regenerate with `manage.py collectstatic`
 static/
+.idea/logs/
 .idea/

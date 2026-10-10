@@ -109,6 +109,11 @@ class PipelineSettings(models.Model):
         db_table = "pipeline_settings"
         verbose_name = "pipeline settings"
         verbose_name_plural = "pipeline settings"
+        permissions = [
+            # Separate from editing settings, so an editor can be allowed to
+            # rebuild the email without also being able to retune the ranking.
+            ("trigger_run", "Can trigger a pipeline run"),
+        ]
 
     def __str__(self) -> str:
         return f"settings (hybrid weight {self.hybrid_weight}, layout {self.layout})"
@@ -121,6 +126,31 @@ class PipelineSettings(models.Model):
     def load(cls) -> "PipelineSettings":
         obj, _ = cls.objects.get_or_create(singleton=1)
         return obj
+
+
+class PipelineLaunch(models.Model):
+    """Who pressed which button, and when.
+
+    Exists for two reasons. It is an audit trail -- the run log records that
+    a job ran, not that a person asked for it. And it closes a race: a
+    subprocess takes a couple of seconds to boot Django and write its own
+    run row, so checking only PipelineRun let a second button press through
+    and show a misleading "started" message. The advisory lock stopped the
+    duplicate run either way; this stops the wrong message.
+    """
+
+    job = models.CharField(max_length=40)
+    launched_at = models.DateTimeField(auto_now_add=True)
+    launched_by = models.CharField(max_length=150, blank=True)
+
+    class Meta:
+        db_table = "pipeline_launch"
+        ordering = ["-launched_at"]
+        verbose_name = "run request"
+        verbose_name_plural = "run requests"
+
+    def __str__(self) -> str:
+        return f"{self.job} by {self.launched_by or 'system'}"
 
 
 class PipelineRun(models.Model):

@@ -1,0 +1,46 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+  <div class="module" style="padding:14px 16px; margin-bottom:18px">
+    <h2 style="margin-top:0">Start a run</h2>
+
+    {% if pipeline_running %}
+      <p style="margin:8px 0 14px">
+        <strong>&ldquo;{{ pipeline_running.command }}&rdquo; is running now</strong>
+        (started {{ pipeline_running.since|date:"H:i:s" }}).
+        Wait for it to finish before starting another.
+        Refresh this page to check.
+      </p>
+    {% elif pipeline_can_trigger %}
+      <p style="margin:8px 0 14px">
+        Runs take a few minutes. You can close this page &mdash; the job keeps
+        going. Come back and refresh to see how it went.
+      </p>
+      <div style="display:flex; flex-wrap:wrap; gap:10px">
+        {% for job in pipeline_jobs %}
+          <form method="post"
+                action="{% url 'admin:pipeline_trigger' job.slug %}"
+                style="margin:0">
+            {% csrf_token %}
+            <button type="submit" class="button"
+                    {% if job.slug == "nightly" %}style="background:#79aec8"{% endif %}>
+              {{ job.label }}
+            </button>
+          </form>
+        {% endfor %}
+      </div>
+      <p style="margin:14px 0 0; color:#666">
+        <strong>Rebuild today&rsquo;s email</strong> is the one you want after
+        changing the section front or a setting. <strong>Full nightly run</strong>
+        does everything and takes longest.
+      </p>
+    {% else %}
+      <p style="margin:8px 0 0; color:#666">
+        You don&rsquo;t have permission to start a run. Ask for the
+        &ldquo;Can trigger a pipeline run&rdquo; permission.
+      </p>
+    {% endif %}
+  </div>
+
+  {{ block.super }}
+{% endblock %}

@@ -1,0 +1,12 @@
+
+=== 2026-09-23T18:31:15.188003+00:00 admin-triggered popularity ===
+TD job 3297471451 issued against raw_web
+hosts: www.arkansasonline.com
+180 stories | 17093 views | median 20 | p10 3 | max 2538
+saved 180 rows at 2026-09-23 18:31 UTC (176 of them match a story we have embedded)
+
+=== 2026-09-23T18:33:25.767666+00:00 admin-triggered popularity ===
+TD job 3297473500 issued against raw_web
+hosts: www.arkansasonline.com
+180 stories | 17129 views | median 20 | p10 3 | max 2538
+saved 180 rows at 2026-09-23 18:33 UTC (176 of them match a story we have embedded)

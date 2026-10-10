@@ -5,10 +5,16 @@ editable, and it is a singleton -- there is nothing useful about a second row.
 """
 from __future__ import annotations
 
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.http import HttpResponseRedirect
+from django.urls import path, reverse
 from django.utils.html import format_html
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
 
-from .models import EmailEdition, PipelineRun, PipelineSettings, Story
+from .models import (EmailEdition, PipelineLaunch, PipelineRun,
+                     PipelineSettings, Story)
+from .runner import JOBS, running_job, start
 
 
 class ReadOnlyAdmin(admin.ModelAdmin):
@@ -83,6 +89,39 @@ class PipelineRunAdmin(ReadOnlyAdmin):
                     "fetched", "inserted", "updated", "embedded", "short_error")
     list_filter = ("command", "status")
     date_hierarchy = "started_at"
+    change_list_template = "admin/pipeline/pipelinerun/change_list.html"
+
+    # --- triggering a run ------------------------------------------------- #
+
+    def has_trigger_permission(self, request) -> bool:
+        """Separate from editing settings, so the two can be granted apart."""
+        return request.user.has_perm("pipeline.trigger_run")
+
+    def get_urls(self):
+        mine = [path("trigger/<slug:slug>/",
+                     self.admin_site.admin_view(self.trigger_view),
+                     name="pipeline_trigger")]
+        return mine + super().get_urls()
+
+    @method_decorator(require_POST)
+    def trigger_view(self, request, slug):
+        """POST-only: a GET would let a link or a prefetch start a job."""
+        back = HttpResponseRedirect(reverse("admin:pipeline_pipelinerun_changelist"))
+        if not self.has_trigger_permission(request):
+            messages.error(request, "You do not have permission to start a run.")
+            return back
+        started, note = start(slug, username=request.user.get_username())
+        messages.success(request, note) if started else messages.warning(request, note)
+        return back
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["pipeline_jobs"] = [
+            {"slug": slug, "label": label} for slug, (_, _, label) in JOBS.items()
+        ]
+        extra_context["pipeline_can_trigger"] = self.has_trigger_permission(request)
+        extra_context["pipeline_running"] = running_job()
+        return super().changelist_view(request, extra_context)
 
     @admin.display(description="status", ordering="status")
     def status_badge(self, obj):
@@ -100,6 +139,13 @@ class PipelineRunAdmin(ReadOnlyAdmin):
     @admin.display(description="error")
     def short_error(self, obj):
         return (obj.error or "")[:80]
+
+
+@admin.register(PipelineLaunch)
+class PipelineLaunchAdmin(ReadOnlyAdmin):
+    list_display = ("launched_at", "job", "launched_by")
+    list_filter = ("job",)
+    date_hierarchy = "launched_at"
 
 
 @admin.register(Story)

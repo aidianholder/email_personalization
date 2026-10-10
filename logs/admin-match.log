@@ -1,0 +1,20 @@
+
+=== 2026-09-23T18:30:00.414885+00:00 admin-triggered match ===
+
+=== 2026-09-23T18:30:00.451290+00:00 admin-triggered match ===
+another adgvec run holds the lock; refusing to start a second one
+section front 186: 5 editor picks (Morning News Update - A)
+candidate pool: 79 eligible of 91 published (2026-09-22 13:30 .. 2026-09-23 13:30)
+editor picks: 5 from section front 186 -> [3813632, 3813629, 3813617, 3813625, 3813620]
+popularity blend: weight 0.6 on the personal score, 79/79 candidates have view data
+16536 recipients | 16163 with profiles
+edition #17 published for 2026-09-23
+
+16536 readers | 82680 selections
+personalized slots filled per reader:
+  0:   373 readers ( 2.3%)
+  2: 16163 readers (97.7%)
+slots by source:
+  editor          50296 (60.8%)
+  personalized    32326 (39.1%)
+  tail               58 ( 0.1%)

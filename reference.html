@@ -1,0 +1,440 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Personalized Newsletter Reference Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Layout: single reading column; the figure breaks wider than the prose. */
+  :root {
+    --bg: #F5F7F8;
+    --surface: #FFFFFF;
+    --surface-2: #EDF1F2;
+    --ink: #17212B;
+    --ink-2: #576472;
+    --ink-3: #8794A2;
+    --line: #D5DCE1;
+    --line-2: #C2CCD3;
+    --key: #0D6E78;
+    --key-soft: #E0EEEF;
+    --ext: #7E8B99;
+    --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12171c; --surface: #18212B; --surface-2: #1F2A35;
+      --ink: #E7ECF0; --ink-2: #A2AEBA; --ink-3: #78848F;
+      --line: #2B3742; --line-2: #3A4855;
+      --key: #4DC2CC; --key-soft: #123038; --ext: #8795A2;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10161D; --surface: #18212B; --surface-2: #1F2A35;
+    --ink: #E7ECF0; --ink-2: #A2AEBA; --ink-3: #78848F;
+    --line: #2B3742; --line-2: #3A4855;
+    --key: #4DC2CC; --key-soft: #123038; --ext: #8795A2;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1180px; margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 44px 72px;
+  }
+  .col { max-width: 68ch; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--key);
+    margin: 0 0 10px;
+  }
+  h1 {
+    font-size: clamp(27px, 4.4vw, 40px); font-weight: 600; line-height: 1.14;
+    letter-spacing: -0.015em; margin: 0 0 16px; text-wrap: balance;
+  }
+  h2 {
+    font-size: 21px; font-weight: 600; letter-spacing: -0.01em;
+    margin: 0 0 12px; text-wrap: balance;
+  }
+  h3 { font-size: 16px; font-weight: 600; margin: 0 0 6px; }
+  p { margin: 0 0 14px; color: var(--ink-2); }
+  .col p strong, li strong { color: var(--ink); font-weight: 600; }
+  code {
+    font-family: var(--mono); font-size: 0.88em;
+    background: var(--surface-2); color: var(--ink);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  section { margin-top: 52px; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+  /* ---- figure ---- */
+  figure { margin: 0; }
+  .fig-scroll { overflow-x: auto; margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding-inline: max(16px, env(safe-area-inset-left, 0px)); }
+  svg.diagram { display: block; width: 100%; min-width: 860px; max-width: 100%; height: auto; color: var(--ink); }
+  figcaption { font-size: 14px; color: var(--ink-3); margin-top: 14px; max-width: 72ch; }
+
+  .d-frame { fill: none; stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 4 4; }
+  .d-box { fill: var(--surface); stroke: var(--line-2); stroke-width: 1; }
+  .d-ext { fill: var(--surface-2); stroke: var(--line-2); stroke-width: 1; }
+  .d-key { fill: var(--key-soft); stroke: var(--key); stroke-width: 1.5; }
+  .d-title { font: 600 14px var(--sans); fill: var(--ink); }
+  .d-title-ext { font: 600 13.5px var(--sans); fill: var(--ink); }
+  .d-sub { font: 400 11.5px var(--mono); fill: var(--ink-3); }
+  .d-sub-key { font: 500 11.5px var(--mono); fill: var(--key); }
+  .d-lane { font: 500 11px var(--mono); fill: var(--ink-3); letter-spacing: 0.1em; }
+  .d-num { font: 500 11px var(--mono); fill: var(--ink-3); }
+  .d-num-key { font: 600 11px var(--mono); fill: var(--key); }
+  .d-arr { stroke: var(--line-2); stroke-width: 1.4; fill: none; }
+  .d-arr-key { stroke: var(--key); stroke-width: 1.6; fill: none; }
+  .d-alab { font: 400 11px var(--mono); fill: var(--ink-3); }
+  .d-dot { fill: var(--key); }
+  .g-line { color: var(--line-2); }
+  .g-key { color: var(--key); }
+
+  /* ---- operation cards ---- */
+  .ops { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+  .op {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 6px; padding: 20px; min-width: 0;
+  }
+  .op .tag {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--key); display: block; margin-bottom: 8px;
+  }
+  .op p { font-size: 14.5px; margin-bottom: 10px; }
+  .op p:last-child { margin-bottom: 0; }
+  .recipe {
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.85;
+    background: var(--surface-2); border-radius: 5px;
+    padding: 12px 14px; margin: 0 0 10px; color: var(--ink);
+    list-style: none; counter-reset: r;
+  }
+  .recipe li { counter-increment: r; padding-left: 22px; position: relative; }
+  .recipe li::before {
+    content: counter(r); position: absolute; left: 0; color: var(--key); font-weight: 500;
+  }
+
+  /* ---- tables ---- */
+  .t-scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14.5px; }
+  caption { text-align: left; font-size: 14px; color: var(--ink-3); padding-bottom: 10px; }
+  th, td { text-align: left; vertical-align: top; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+  th { font-weight: 600; font-size: 13px; color: var(--ink); background: var(--surface-2); white-space: nowrap; }
+  td { color: var(--ink-2); }
+  td:first-child { color: var(--ink); font-weight: 500; }
+  td code { font-size: 12.5px; background: none; padding: 0; color: var(--ink-2); }
+
+  /* ---- pitfalls ---- */
+  .pits { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .pit { background: var(--surface); padding: 18px 20px; }
+  .pit h3 { display: flex; gap: 9px; align-items: baseline; }
+  .pit h3 span.n { font-family: var(--mono); font-size: 12px; color: var(--key); font-weight: 500; }
+  .pit p { font-size: 14.5px; margin: 0; }
+</style>
+
+<div class="wrap">
+  <header class="col">
+    <p class="eyebrow">Reference architecture</p>
+    <h1>Personalized newsletter, in six nightly steps</h1>
+    <p>A working design for an email that gives every reader a few stories chosen for them. Every
+      box marked <em>you supply</em> is something you almost certainly already run — a CMS, an
+      analytics warehouse, an email platform. Swap your own in; the shape of the system does not
+      change.</p>
+    <p>The parts worth copying are the three operations in colour below, and the decision to do all
+      of them on a schedule rather than while someone is waiting.</p>
+  </header>
+
+  <section>
+    <figure>
+      <div class="fig-scroll">
+        <svg class="diagram" viewBox="0 0 1200 880" role="img"
+             aria-label="Three external systems feed a nightly six-step Django pipeline that stores everything in PostgreSQL. Step two embeds article text into vectors, step four averages a reader's article vectors into one interest vector, step five matches profiles against the day's articles by cosine similarity. At send time the email platform makes a single lookup against pre-built lineups.">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 9 5 L 0 9 z" fill="currentColor"/>
+            </marker>
+          </defs>
+
+          <!-- lane labels -->
+          <text class="d-lane" x="30" y="40">You supply</text>
+          <text class="d-lane" x="345" y="40">Nightly batch</text>
+          <text class="d-lane" x="865" y="40">State</text>
+
+          <!-- external inputs -->
+          <g>
+            <rect class="d-ext" x="30" y="150" width="272" height="66" rx="5"/>
+            <text class="d-title-ext" x="48" y="178">Content source</text>
+            <text class="d-sub" x="48" y="198">id · headline · summary · url · image</text>
+
+            <rect class="d-ext" x="30" y="230" width="272" height="66" rx="5"/>
+            <text class="d-title-ext" x="48" y="258">Embedding model</text>
+            <text class="d-sub" x="48" y="278">text in → vector out</text>
+
+            <rect class="d-ext" x="30" y="310" width="272" height="66" rx="5"/>
+            <text class="d-title-ext" x="48" y="338">Reading history</text>
+            <text class="d-sub" x="48" y="358">reader id · article id</text>
+          </g>
+
+          <!-- arrows: inputs into their step -->
+          <g class="g-line">
+            <line class="d-arr" x1="302" y1="183" x2="338" y2="183" marker-end="url(#ah)"/>
+            <line class="d-arr" x1="302" y1="343" x2="338" y2="343" marker-end="url(#ah)"/>
+          </g>
+          <g class="g-key">
+            <line class="d-arr-key" x1="302" y1="263" x2="338" y2="263"
+                  marker-start="url(#ah)" marker-end="url(#ah)"/>
+          </g>
+
+          <!-- django pipeline frame -->
+          <rect class="d-frame" x="330" y="126" width="460" height="512" rx="7"/>
+          <text class="d-sub" x="345" y="630">Django management command, one scheduled run</text>
+
+          <!-- steps -->
+          <g>
+            <rect class="d-box" x="345" y="150" width="430" height="66" rx="5"/>
+            <text class="d-num" x="361" y="178">01</text>
+            <text class="d-title" x="392" y="178">Pull newly published articles</text>
+            <text class="d-sub" x="392" y="198">writes stories</text>
+
+            <rect class="d-key" x="345" y="230" width="430" height="66" rx="5"/>
+            <text class="d-num-key" x="361" y="258">02</text>
+            <text class="d-title" x="392" y="258">Embed headline + kicker/tease + story text</text>
+            <text class="d-sub-key" x="392" y="278">writes stories.embedding</text>
+
+            <rect class="d-box" x="345" y="310" width="430" height="66" rx="5"/>
+            <text class="d-num" x="361" y="338">03</text>
+            <text class="d-title" x="392" y="338">Pull each reader's article history</text>
+            <text class="d-sub" x="392" y="358">writes reads</text>
+
+            <rect class="d-key" x="345" y="390" width="430" height="66" rx="5"/>
+            <text class="d-num-key" x="361" y="418">04</text>
+            <text class="d-title" x="392" y="418">Average the vectors a reader read</text>
+            <text class="d-sub-key" x="392" y="438">reads stories + reads · writes profiles</text>
+
+            <rect class="d-key" x="345" y="470" width="430" height="66" rx="5"/>
+            <text class="d-num-key" x="361" y="498">05</text>
+            <text class="d-title" x="392" y="498">Cosine match: profile × today's articles</text>
+            <text class="d-sub-key" x="392" y="518">reads profiles + stories</text>
+
+            <rect class="d-box" x="345" y="550" width="430" height="66" rx="5"/>
+            <text class="d-num" x="361" y="578">06</text>
+            <text class="d-title" x="392" y="578">Store each reader's finished lineup</text>
+            <text class="d-sub" x="392" y="598">writes editions</text>
+          </g>
+
+          <!-- step-to-step flow -->
+          <g class="g-line">
+            <line class="d-arr" x1="560" y1="216" x2="560" y2="228" marker-end="url(#ah)"/>
+            <line class="d-arr" x1="560" y1="296" x2="560" y2="308" marker-end="url(#ah)"/>
+            <line class="d-arr" x1="560" y1="376" x2="560" y2="388" marker-end="url(#ah)"/>
+            <line class="d-arr" x1="560" y1="456" x2="560" y2="468" marker-end="url(#ah)"/>
+            <line class="d-arr" x1="560" y1="536" x2="560" y2="548" marker-end="url(#ah)"/>
+          </g>
+
+          <!-- postgres -->
+          <rect class="d-frame" x="850" y="126" width="320" height="512" rx="7"/>
+          <text class="d-title" x="866" y="112">PostgreSQL + vector extension</text>
+          <g>
+            <rect class="d-box" x="866" y="150" width="288" height="74" rx="5"/>
+            <circle class="d-dot" cx="878" cy="172" r="3.5"/>
+            <text class="d-sub" x="890" y="176">stories</text>
+            <text class="d-sub" x="882" y="200">metadata + one vector</text>
+            <text class="d-sub" x="882" y="214">per article</text>
+
+            <rect class="d-box" x="866" y="246" width="288" height="60" rx="5"/>
+            <text class="d-sub" x="882" y="272">reads</text>
+            <text class="d-sub" x="882" y="292">who opened what</text>
+
+            <rect class="d-box" x="866" y="328" width="288" height="74" rx="5"/>
+            <circle class="d-dot" cx="878" cy="350" r="3.5"/>
+            <text class="d-sub" x="890" y="354">profiles</text>
+            <text class="d-sub" x="882" y="378">one interest vector</text>
+            <text class="d-sub" x="882" y="392">per reader</text>
+
+            <rect class="d-box" x="866" y="424" width="288" height="74" rx="5"/>
+            <text class="d-sub" x="882" y="450">editions</text>
+            <text class="d-sub" x="882" y="474">the finished lineup,</text>
+            <text class="d-sub" x="882" y="488">ready to serve</text>
+          </g>
+          <text class="d-sub" x="866" y="528">● holds vectors</text>
+          <text class="d-sub" x="866" y="556">Everything the pipeline</text>
+          <text class="d-sub" x="866" y="570">produces lands here. No</text>
+          <text class="d-sub" x="866" y="584">other store is needed.</text>
+
+          <g class="g-line">
+            <line class="d-arr" x1="790" y1="382" x2="842" y2="382"
+                  marker-start="url(#ah)" marker-end="url(#ah)"/>
+          </g>
+          <text class="d-alab" x="784" y="366" text-anchor="end">reads ·</text>
+          <text class="d-alab" x="784" y="380" text-anchor="end">writes</text>
+
+          <!-- send time lane -->
+          <line x1="30" y1="690" x2="1170" y2="690" stroke="var(--line)" stroke-width="1"/>
+          <text class="d-lane" x="30" y="722">At send time — the only path with a person waiting</text>
+
+          <g>
+            <rect class="d-ext" x="30" y="750" width="272" height="80" rx="5"/>
+            <text class="d-title-ext" x="48" y="782">Email platform</text>
+            <text class="d-sub" x="48" y="802">renders and sends;</text>
+            <text class="d-sub" x="48" y="816">fetches content per reader</text>
+
+            <rect class="d-box" x="420" y="750" width="300" height="80" rx="5"/>
+            <text class="d-title" x="438" y="782">Django HTTP endpoint</text>
+            <text class="d-sub" x="438" y="802">one row from editions.</text>
+            <text class="d-sub" x="438" y="816">No scoring here.</text>
+
+            <rect class="d-box" x="838" y="750" width="332" height="80" rx="5"/>
+            <text class="d-title" x="856" y="782">Pre-built lineup, as JSON</text>
+            <text class="d-sub" x="856" y="802">already chosen hours ago</text>
+          </g>
+          <g class="g-line">
+            <line class="d-arr" x1="302" y1="790" x2="412" y2="790" marker-end="url(#ah)"/>
+            <line class="d-arr" x1="720" y1="790" x2="830" y2="790" marker-end="url(#ah)"/>
+          </g>
+          <text class="d-alab" x="357" y="778" text-anchor="middle">asks</text>
+          <text class="d-alab" x="775" y="778" text-anchor="middle">returns</text>
+        </svg>
+      </div>
+      <figcaption>Nothing in the request path computes anything. A send is thousands of
+        near-simultaneous requests, so the lineup each reader receives is decided hours earlier and
+        stored whole.</figcaption>
+    </figure>
+  </section>
+
+  <section class="col">
+    <h2>The three operations that carry the work</h2>
+    <p>Everything else is plumbing you can write in an afternoon. These three are where the design
+      decisions live.</p>
+  </section>
+
+  <section>
+    <div class="ops">
+      <div class="op">
+        <span class="tag">Step 02 — embedding</span>
+        <h3>Articles become vectors</h3>
+        <p>Send each article's <strong>headline plus its one-line summary</strong> to an embedding
+          model and store the vector it returns on the article row. Full body text dilutes toward
+          generic; a headline alone is too thin and too clickbait-shaped.</p>
+        <p>This is the only place you call the model, and the only thing you ever send it is
+          published article text. <strong>Reader data is never embedded</strong> — which keeps the
+          privacy conversation short.</p>
+      </div>
+
+      <div class="op">
+        <span class="tag">Step 04 — interest vector</span>
+        <h3>A reader is the average of what they read</h3>
+        <p>No model call. The reader's interest vector is derived arithmetically from the article
+          vectors you already have:</p>
+        <ol class="recipe">
+          <li>collect vectors of articles they opened</li>
+          <li>subtract the corpus mean from each</li>
+          <li>average them</li>
+        </ol>
+        <p><strong>Step 2 is audience dependent</strong> Every article from our newspaper that isn't wire copy 
+          shares a large common direction -- it's all some variety of "Arkansas" and "Local News."  
+          We factor out the "universal mean" from that out and it gave better results.</p>
+        <p>
+            That may not be as significant if you're USA Today or the NYT.  IDK how it would work for the Trace or the 19th News.  TEST TEST TEST.
+        </p>
+      </div>
+
+      <div class="op">
+        <span class="tag">Step 05 — the match</span>
+        <h3>Cosine similarity, once per night</h3>
+        <p>For each reader, take the cosine similarity between their interest vector and every
+          article in the candidate window, then keep the top few. One library call.</p>
+        <p>At ~20k readers against a few hundred articles this is a brute-force
+          multiplication measured in milliseconds.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr style="margin-top:52px">
+
+  <section>
+    <div class="col"><h2>What you have to supply</h2>
+      <p>Three integrations. The fields below are the minimum that makes the design work; anything
+        extra is a bonus, not a requirement.</p>
+    </div>
+    <div class="t-scroll">
+      <table>
+        <thead>
+          <tr><th>You need</th><th>Minimum fields</th><th>How often</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>A list of what you published</td>
+            <td><code>article id · headline · summary/teaser · text · url · image url · published at</code></td>
+            <td>Nightly</td>
+            <td>We're pulling it from the CMS API with simple fetch</td>
+          </tr>
+          <tr>
+            <td>A list of what each reader read</td>
+            <td><code>reader id · article id</code></td>
+            <td>Nightly</td>
+            <td>Nightly export from our CDP, but anything that supplies reading histroy for identified readers, I could see a home rolled solution using GTM</td>
+          </tr>
+          <tr>
+            <td>An embedding model</td>
+            <td><code>text → fixed-length vector</code></td>
+            <td>Once per article</td>
+            <td>Hosted or local. Dimension is yours to pick; store it and never mix two models in
+              one table.  We're using openAI embeddings via API.</td>
+          </tr>
+          <tr>
+            <td>An email platform that can fetch content</td>
+            <td><code>an HTTP call per recipient, with the reader id in it</code></td>
+            <td>At send</td>
+            <td>Most ESPs call this dynamic or connected content.  Make sure you disable caching!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="col"><h2>Learn from my mistakes</h2>
+      <p>Each of these bit me -- and they're super obvious in retrospect.</p>
+    </div>
+    <div class="pits">
+      <div class="pit">
+        <h3><span class="n">01</span> One reader identifier, end to end</h3>
+        <p>The id in your reading history has to be the same id your email platform puts in the
+          request. Platforms usually carry two — an internal one and the one you assigned — and the
+          template variable you reach for first is often the wrong one. Settle this before you write
+          a schema, because it is the primary key of half your tables.</p>
+      </div>
+      <div class="pit">
+        <h3><span class="n">02</span> Ask for article <em>ids</em>, not URLs</h3>
+        <p>If your reading history reports URLs and your CMS reports ids, you will be string-matching
+          two systems that disagree.</p>
+      </div>
+      <div class="pit">
+        <h3><span class="n">03</span> Decide what happens when there is nothing to say</h3>
+        <p>Some readers will have no history, and some nights something will fail. The endpoint must
+          always return a complete, renderable lineup.  We do this by making persoanlization an additive,
+          not a replacement for our traditional morning email stories.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="col">
+    <h2>TEST, TEST, TEST</h2>
+    <p>The best testing I was able to do was to do a holdback test.  Synthetic data using only part of the reader's
+      history, then run a sample pass and see if what you generated as personalized were articles the reader actually did 
+      wind up reading.  Do that before you send anything.</p>
+    <h2>It's always about buy-in </h2>
+      <p>The biggest hurdles to get this into production aren't the tech -- that's easy or at least straightforward -- 
+        it's getting every department on board, making sure the newsroom is OK with what you're doing, and setting up A/B testing and reporting.
+      </p>
+  </section>
+</div>
+
+</body></html>
